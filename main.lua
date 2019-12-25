@@ -1,5 +1,6 @@
 WINDOW_WIDTH = 640
-WINDOW_HEIGHT = 480
+WINDOW_HEIGHT = 540
+PLAYABLE_HEIGHT = 480
 TILE_SIZE = 32
 
 TILE_EMPTY = 0
@@ -8,7 +9,7 @@ TILE_BODY = 2
 TILE_APPLE = 3
 
 TILES_NUMBER_X = WINDOW_WIDTH / TILE_SIZE
-TILES_NUMBER_Y = WINDOW_HEIGHT / TILE_SIZE
+TILES_NUMBER_Y = PLAYABLE_HEIGHT / TILE_SIZE
 
 local snake = {}
 local snake_length = 1
@@ -24,6 +25,8 @@ local lastMovementDirectionX = 0
 -- 1 for moving down , -1 for moving up , 0 for stop movement
 local movementDirectionY = 0
 local lastMovementDirectionY = 0
+
+local score = 0
 
 local game_over = false
 
@@ -83,14 +86,18 @@ function love.draw()
     drawGrid()
     drawSnake()
     drawApple()
+    drawScore()
     if game_over then
         local large_font = love.graphics.newFont(64)
-        love.graphics.setColor(0.5, 0.5, 1, 1)
+        love.graphics.setColor(1, 0, 1, 1)
         love.graphics.setFont(large_font)
-        love.graphics.printf("GAME OVER!", 0, (WINDOW_HEIGHT / 2) - 32, WINDOW_WIDTH, "center")
-        local font = love.graphics.newFont(32)
-        love.graphics.setFont(font)
-        love.graphics.printf("press any key to replay!", 0, (WINDOW_HEIGHT / 2) + 32, WINDOW_WIDTH, "center")
+        love.graphics.printf("GAME OVER!", 0, (WINDOW_HEIGHT / 2) - 64, WINDOW_WIDTH, "center")
+        local medium_font = love.graphics.newFont(32)
+        love.graphics.setFont(medium_font)
+        love.graphics.printf("SCORE : " .. score, 0, (WINDOW_HEIGHT / 2) + 24, WINDOW_WIDTH, "center")
+        local small_font = love.graphics.newFont(24)
+        love.graphics.setFont(small_font)
+        love.graphics.printf("press any key to replay!", 0, (WINDOW_HEIGHT / 2) + 64, WINDOW_WIDTH, "center")
     end
 end
 
@@ -169,6 +176,7 @@ function moveSnake()
         table.remove(snake, 1)
     elseif tile_grid[snake_head_position["y"]][snake_head_position["x"]] == TILE_APPLE then
         snake_length = snake_length + 1
+        score = score + 10
         setAppleLocation()
     else
         game_over = true
@@ -200,6 +208,13 @@ function drawApple()
     tile_grid[appleY][appleX] = TILE_APPLE
 end
 
+function drawScore()
+    local small = love.graphics.newFont(18)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setFont(small)
+    love.graphics.printf("SCORE : " .. score, 10, WINDOW_HEIGHT - 40, WINDOW_WIDTH, "left")
+end
+
 function restartGame()
     initializeGrid()
     initializeSnake()
@@ -207,5 +222,6 @@ function restartGame()
     movementDirectionX = 1
     movementDirectionY = 0
     lastMovementDirectionY, lastMovementDirectionX = 0, 0
+    score = 0
     game_over = false
 end
