@@ -16,16 +16,14 @@ local snake_head_position = {}
 local tile_grid = {}
 
 local time_passed = 0
-
-local oldSnakeX
-local oldSnakeY
-
 local appleX, appleY = 0, 0
 
 -- 1 for moving right , -1 for moving left , 0 for stop movement
 local movementDirectionX = 1
+local lastMovementDirectionX = 0
 -- 1 for moving down , -1 for moving up , 0 for stop movement
 local movementDirectionY = 0
+local lastMovementDirectionY = 0
 
 function love.load()
     love.window.setTitle("Snake")
@@ -46,16 +44,16 @@ function love.keypressed(key)
     if key == "escape" then
         love.event.quit()
     end
-    if key == "right" and movementDirectionX == 0 then
+    if key == "right" and lastMovementDirectionX == 0 then
         movementDirectionX = 1
         movementDirectionY = 0
-    elseif key == "left" and movementDirectionX == 0 then
+    elseif key == "left" and lastMovementDirectionX == 0 then
         movementDirectionX = -1
         movementDirectionY = 0
-    elseif key == "up" and movementDirectionY == 0 then
+    elseif key == "up" and lastMovementDirectionY == 0 then
         movementDirectionY = -1
         movementDirectionX = 0
-    elseif key == "down" and movementDirectionY == 0 then
+    elseif key == "down" and lastMovementDirectionY == 0 then
         movementDirectionY = 1
         movementDirectionX = 0
     end
@@ -65,7 +63,8 @@ function love.update(dt)
     time_passed = time_passed + dt
     if time_passed >= 0.1 then
         moveSnake()
-
+        lastMovementDirectionX = movementDirectionX
+        lastMovementDirectionY = movementDirectionY
         time_passed = 0
     end
 end
