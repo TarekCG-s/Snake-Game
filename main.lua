@@ -27,7 +27,7 @@ local movementDirectionY = 0
 local lastMovementDirectionY = 0
 
 local score = 0
-
+local apple_sounds = {}
 local game_over = false
 
 function love.load()
@@ -43,6 +43,12 @@ function love.load()
     initializeSnake()
     math.randomseed(os.time())
     setAppleLocation()
+    table.insert(apple_sounds, "apple1.wav")
+    table.insert(apple_sounds, "apple2.wav")
+    table.insert(apple_sounds, "apple3.wav")
+    background_sound = love.audio.newSource("bg.mp3", "stream")
+    background_sound:setLooping(true)
+    background_sound:play()
 end
 
 function love.keypressed(key)
@@ -64,7 +70,7 @@ function love.keypressed(key)
             movementDirectionX = 0
         end
     else
-        if key ~= "escape" then
+        if key == "return" then
             restartGame()
         end
     end
@@ -88,8 +94,8 @@ function love.draw()
     drawApple()
     drawScore()
     if game_over then
+        love.graphics.setColor(1, 1, 1, 1)
         local large_font = love.graphics.newFont(64)
-        love.graphics.setColor(1, 0, 1, 1)
         love.graphics.setFont(large_font)
         love.graphics.printf("GAME OVER!", 0, (WINDOW_HEIGHT / 2) - 64, WINDOW_WIDTH, "center")
         local medium_font = love.graphics.newFont(32)
@@ -97,7 +103,7 @@ function love.draw()
         love.graphics.printf("SCORE : " .. score, 0, (WINDOW_HEIGHT / 2) + 24, WINDOW_WIDTH, "center")
         local small_font = love.graphics.newFont(24)
         love.graphics.setFont(small_font)
-        love.graphics.printf("press any key to replay!", 0, (WINDOW_HEIGHT / 2) + 64, WINDOW_WIDTH, "center")
+        love.graphics.printf("press enter to replay!", 0, (WINDOW_HEIGHT / 2) + 64, WINDOW_WIDTH, "center")
     end
 end
 
@@ -115,7 +121,7 @@ end
 
 -- Drawing the grid
 function drawGrid()
-    love.graphics.setColor(0, 1, 1, 1)
+    love.graphics.setColor(0, 0.5, 1, 1)
     for y = 1, TILES_NUMBER_Y do
         for x = 1, TILES_NUMBER_X do
             love.graphics.rectangle("line", (x - 1) * TILE_SIZE, (y - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
@@ -172,13 +178,18 @@ function moveSnake()
         end
         snake_head_position["y"] = newY + 1
     end
+
     if tile_grid[snake_head_position["y"]][snake_head_position["x"]] == TILE_EMPTY then
         table.remove(snake, 1)
     elseif tile_grid[snake_head_position["y"]][snake_head_position["x"]] == TILE_APPLE then
+        apple_sound = love.audio.newSource(apple_sounds[math.random(3)], "static")
+        apple_sound:play()
         snake_length = snake_length + 1
         score = score + 10
         setAppleLocation()
     else
+        death_sound = love.audio.newSource("death.wav", "static")
+        death_sound:play()
         game_over = true
     end
 
