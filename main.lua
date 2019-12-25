@@ -25,6 +25,8 @@ local lastMovementDirectionX = 0
 local movementDirectionY = 0
 local lastMovementDirectionY = 0
 
+local game_over = false
+
 function love.load()
     love.window.setTitle("Snake")
     love.window.setMode(
@@ -44,28 +46,36 @@ function love.keypressed(key)
     if key == "escape" then
         love.event.quit()
     end
-    if key == "right" and lastMovementDirectionX == 0 then
-        movementDirectionX = 1
-        movementDirectionY = 0
-    elseif key == "left" and lastMovementDirectionX == 0 then
-        movementDirectionX = -1
-        movementDirectionY = 0
-    elseif key == "up" and lastMovementDirectionY == 0 then
-        movementDirectionY = -1
-        movementDirectionX = 0
-    elseif key == "down" and lastMovementDirectionY == 0 then
-        movementDirectionY = 1
-        movementDirectionX = 0
+    if not game_over then
+        if key == "right" and lastMovementDirectionX == 0 then
+            movementDirectionX = 1
+            movementDirectionY = 0
+        elseif key == "left" and lastMovementDirectionX == 0 then
+            movementDirectionX = -1
+            movementDirectionY = 0
+        elseif key == "up" and lastMovementDirectionY == 0 then
+            movementDirectionY = -1
+            movementDirectionX = 0
+        elseif key == "down" and lastMovementDirectionY == 0 then
+            movementDirectionY = 1
+            movementDirectionX = 0
+        end
+    else
+        if key ~= "escape" then
+            restartGame()
+        end
     end
 end
 
 function love.update(dt)
-    time_passed = time_passed + dt
-    if time_passed >= 0.1 then
-        moveSnake()
-        lastMovementDirectionX = movementDirectionX
-        lastMovementDirectionY = movementDirectionY
-        time_passed = 0
+    if not game_over then
+        time_passed = time_passed + dt
+        if time_passed >= 0.1 then
+            moveSnake()
+            lastMovementDirectionX = movementDirectionX
+            lastMovementDirectionY = movementDirectionY
+            time_passed = 0
+        end
     end
 end
 
@@ -73,11 +83,21 @@ function love.draw()
     drawGrid()
     drawSnake()
     drawApple()
+    if game_over then
+        local large_font = love.graphics.newFont(64)
+        love.graphics.setColor(0.5, 0.5, 1, 1)
+        love.graphics.setFont(large_font)
+        love.graphics.printf("GAME OVER!", 0, (WINDOW_HEIGHT / 2) - 32, WINDOW_WIDTH, "center")
+        local font = love.graphics.newFont(32)
+        love.graphics.setFont(font)
+        love.graphics.printf("press any key to replay!", 0, (WINDOW_HEIGHT / 2) + 32, WINDOW_WIDTH, "center")
+    end
 end
 
 -- Initialize tile_table with the size of the grid.
 -- Fill tile_table with zeros.
 function initializeGrid()
+    tile_grid = {}
     for y = 1, TILES_NUMBER_Y do
         table.insert(tile_grid, {})
         for x = 1, TILES_NUMBER_X do
@@ -97,44 +117,30 @@ function drawGrid()
     end
 end
 
--- Drawing the snake in each frame.
-function drawSnake()
-    for i = 1, snake_length do
-        love.graphics.setColor(0, 1, 0, 1)
-        love.graphics.rectangle("fill", snake[i]["x"] * TILE_SIZE, snake[i]["y"] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-        tile_grid[snake[i]["y"] + 1][snake[i]["x"] + 1] = TILE_BODY
-    end
-    tile_grid[snake_head_position["y"]][snake_head_position["x"]] = TILE_HEAD
-end
-
--- change the location of the apple in the grid.
-function setAppleLocation()
-    while true do
-        local y = math.random(1, TILES_NUMBER_Y)
-        local x = math.random(1, TILES_NUMBER_X)
-        if tile_grid[y][x] == 0 then
-            tile_grid[y][x] = 3
-            appleX = x
-            appleY = y
-            break
-        end
-    end
-end
-
--- Drawing Apple.
-function drawApple()
-    love.graphics.setColor(1, 0, 0, 1)
-    love.graphics.rectangle("fill", (appleX - 1) * TILE_SIZE, (appleY - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-    tile_grid[appleY][appleX] = TILE_APPLE
-end
-
+-- initialize snake
 function initializeSnake()
+    snake = {}
     table.insert(snake, {})
     snake[1]["x"] = 0
     snake[1]["y"] = 0
     snake_length = 1
     snake_head_position["x"] = 1
     snake_head_position["y"] = 1
+end
+
+-- Drawing the snake in each frame.
+function drawSnake()
+    for i = 1, snake_length do
+        if i == snake_length then
+            love.graphics.setColor(0, 1, 0.5, 1)
+        else
+            love.graphics.setColor(0, 1, 0, 1)
+        end
+
+        love.graphics.rectangle("fill", snake[i]["x"] * TILE_SIZE, snake[i]["y"] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        tile_grid[snake[i]["y"] + 1][snake[i]["x"] + 1] = TILE_BODY
+    end
+    tile_grid[snake_head_position["y"]][snake_head_position["x"]] = TILE_HEAD
 end
 
 function moveSnake()
@@ -165,10 +171,41 @@ function moveSnake()
         snake_length = snake_length + 1
         setAppleLocation()
     else
-        love.event.quit()
+        game_over = true
     end
 
     table.insert(snake, {})
     snake[snake_length]["x"] = newX
     snake[snake_length]["y"] = newY
+end
+
+-- change the location of the apple in the grid.
+function setAppleLocation()
+    while true do
+        local y = math.random(1, TILES_NUMBER_Y)
+        local x = math.random(1, TILES_NUMBER_X)
+        if tile_grid[y][x] == 0 then
+            tile_grid[y][x] = 3
+            appleX = x
+            appleY = y
+            break
+        end
+    end
+end
+
+-- Drawing Apple.
+function drawApple()
+    love.graphics.setColor(1, 0, 0, 1)
+    love.graphics.rectangle("fill", (appleX - 1) * TILE_SIZE, (appleY - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+    tile_grid[appleY][appleX] = TILE_APPLE
+end
+
+function restartGame()
+    initializeGrid()
+    initializeSnake()
+    setAppleLocation()
+    movementDirectionX = 1
+    movementDirectionY = 0
+    lastMovementDirectionY, lastMovementDirectionX = 0, 0
+    game_over = false
 end
